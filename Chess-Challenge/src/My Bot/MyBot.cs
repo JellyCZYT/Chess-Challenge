@@ -8,13 +8,54 @@ public class MyBot : IChessBot
         return GetBestMove(board);
     }
 
-    int[] pieceValues = { 0, 100, 300, 350, 500, 1000, 0 };
+    int[] pieceTables = { 0, 100, 300, 400, 500, 1000, 0 };
 
     float evaluate(Board board, Move move)
     {
-        return 1.0f;
-    }
+        // Evaluate INIT
+        PieceList[] pieces = board.GetAllPieceLists();
+        float eval = 0f;
 
+        for (int i = 0; i < pieces.Length; i++)
+        {
+            if (i <= 5)
+            {
+                eval += pieceTables[i % 6] * pieces[i].Count;
+            }
+            else
+            {
+                eval -= pieceTables[i % 6] * pieces[i].Count;
+            }
+        }
+
+        if (board.IsWhiteToMove)
+        {
+            if (board.IsDraw()) {
+                return 0;
+            }
+            if (board.IsInCheckmate()) {
+                eval -= 999999;
+            }
+            if (move.IsCapture || move.IsCastles || move.IsPromotion)
+            {
+                eval -= 50;
+            }
+            return eval;
+        } else {
+            if (board.TrySkipTurn())
+            {
+                if (board.IsInCheckmate())
+                {
+                    eval += 999999;
+                }
+                if (move.IsCapture || move.IsCastles || move.IsPromotion) {
+                    eval -= 50;
+                }
+                board.UndoSkipTurn();
+            }
+            return eval;
+        }
+    }
 
     Move GetBestMove(Board board)
     {
@@ -46,10 +87,6 @@ public class MyBot : IChessBot
         }
 
         return bestMove;
-    }
-
-    int Eval(Move move, Board board) {
-        return 1;
     }
         float Minimax(Board board, Move move, int depth, float alpha, float beta, bool isMaximizing)
     {
