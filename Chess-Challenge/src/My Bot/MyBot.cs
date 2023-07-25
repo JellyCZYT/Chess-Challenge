@@ -12,21 +12,64 @@ public class MyBot : IChessBot
 
     float evaluate(Board board, Move move)
     {
-        // Evaluate INIT
-        PieceList[] pieces = board.GetAllPieceLists();
-        float eval = 0f;
+    int[,] pawnPST = new int[8, 8]
+    {
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {50, 50, 50, 50, 50, 50, 50, 50},
+        {10, 10, 20, 30, 30, 20, 10, 10},
+        {5, 5, 10, 25, 25, 10, 5, 5},
+        {0, 0, 0, 20, 20, 0, 0, 0},
+        {5, -5, -10, 0, 0, -10, -5, 5},
+        {5, 10, 10, -20, -20, 10, 10, 5},
+        {0, 0, 0, 0, 0, 0, 0, 0}
+    };
 
-        for (int i = 0; i < pieces.Length; i++)
+    int[,] knightPST = new int[8, 8]
+    {
+        {-50, -40, -30, -30, -30, -30, -40, -50},
+        {-40, -20, 0, 0, 0, 0, -20, -40},
+        {-30, 0, 10, 15, 15, 10, 0, -30},
+        {-30, 5, 15, 20, 20, 15, 5, -30},
+        {-30, 0, 15, 20, 20, 15, 0, -30},
+        {-30, 5, 10, 15, 15, 10, 5, -30},
+        {-40, -20, 0, 5, 5, 0, -20, -40},
+        {-50, -40, -30, -30, -30, -30, -40, -50}
+    };
+
+    // Define PSTs for other piece types (bishop, rook, queen, and king) similarly
+
+    // Evaluate INIT
+    PieceList[] pieces = board.GetAllPieceLists();
+    float eval = 0f;
+
+    for (int i = 0; i < pieces.Length; i++)
+    {
+        if (i <= 5)
         {
-            if (i <= 5)
+            // Evaluate pieces for white
+            int pieceValue = pieceTables[i % 6];
+            foreach (Square square in pieces[i])
             {
-                eval += pieceTables[i % 6] * pieces[i].Count;
-            }
-            else
-            {
-                eval -= pieceTables[i % 6] * pieces[i].Count;
+                if (pieces[i].IsWhite) // White piece
+                    eval += pieceValue + pawnPST[square.Rank, square.File];
+                else // Black piece
+                    eval -= pieceValue + pawnPST[7 - square.Rank, square.File];
             }
         }
+        else
+        {
+            // Evaluate pieces for black
+            int pieceValue = pieceTables[i % 6];
+            foreach (Square square in pieces[i])
+            {
+                if (pieces[i].IsWhite) // White piece
+                    eval += pieceValue + knightPST[square.Rank, square.File];
+                else // Black piece
+                    eval -= pieceValue + knightPST[7 - square.Rank, square.File];
+            }
+        }
+    }
+
 
         if (board.IsWhiteToMove)
         {
