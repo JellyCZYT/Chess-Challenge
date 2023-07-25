@@ -48,9 +48,10 @@ public class MyBot : IChessBot
         {
             // Evaluate pieces for white
             int pieceValue = pieceTables[i % 6];
-            foreach (Square square in pieces[i])
+            foreach (Piece piece in pieces[i])
             {
-                if (pieces[i].IsWhite) // White piece
+                    Square square = piece.Square;
+                if (piece.IsWhite) // White piece
                     eval += pieceValue + pawnPST[square.Rank, square.File];
                 else // Black piece
                     eval -= pieceValue + pawnPST[7 - square.Rank, square.File];
@@ -60,10 +61,11 @@ public class MyBot : IChessBot
         {
             // Evaluate pieces for black
             int pieceValue = pieceTables[i % 6];
-            foreach (Square square in pieces[i])
-            {
-                if (pieces[i].IsWhite) // White piece
-                    eval += pieceValue + knightPST[square.Rank, square.File];
+                foreach (Piece piece in pieces[i])
+                {
+                    Square square = piece.Square;
+                    if (piece.IsWhite) // White piece
+                        eval += pieceValue + knightPST[square.Rank, square.File];
                 else // Black piece
                     eval -= pieceValue + knightPST[7 - square.Rank, square.File];
             }
