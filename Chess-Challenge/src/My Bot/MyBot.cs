@@ -8,12 +8,11 @@ public class MyBot : IChessBot
         return GetBestMove(board);
     }
 
+
     int[] pieceTables = { 0, 100, 300, 400, 500, 1000, 0 };
 
-    float evaluate(Board board, Move move)
-    {
     int[,] pawnPST = new int[8, 8]
-    {
+        {
         {0, 0, 0, 0, 0, 0, 0, 0},
         {50, 50, 50, 50, 50, 50, 50, 50},
         {10, 10, 20, 30, 30, 20, 10, 10},
@@ -22,7 +21,7 @@ public class MyBot : IChessBot
         {5, -5, -10, 0, 0, -10, -5, 5},
         {5, 10, 10, -20, -20, 10, 10, 5},
         {0, 0, 0, 0, 0, 0, 0, 0}
-    };
+        };
 
     int[,] knightPST = new int[8, 8]
     {
@@ -36,49 +35,34 @@ public class MyBot : IChessBot
         {-50, -40, -30, -30, -30, -30, -40, -50}
     };
 
-    // Define PSTs for other piece types (bishop, rook, queen, and king) similarly
-
-    // Evaluate INIT
-    PieceList[] pieces = board.GetAllPieceLists();
-    float eval = 0f;
-
-    for (int i = 0; i < pieces.Length; i++)
+    float evaluate(Board board, Move move)
     {
-        if (i <= 5)
+        // Define PSTs for other piece types (bishop, rook, queen, and king) similarly
+        // Evaluate INIT
+        PieceList[] pieces = board.GetAllPieceLists();
+        float eval = 0f;
+
+        for (int i = 0; i < pieces.Length; i++)
         {
-            // Evaluate pieces for white
             int pieceValue = pieceTables[i % 6];
             foreach (Piece piece in pieces[i])
             {
-                    Square square = piece.Square;
-                if (piece.IsWhite) // White piece
-                    eval += pieceValue + pawnPST[square.Rank, square.File];
-                else // Black piece
-                    eval -= pieceValue + pawnPST[7 - square.Rank, square.File];
+                Square square = piece.Square;
+                float pst = pieceValue + getPST(square.Rank, square.File, i,piece.IsWhite);
+                if (!piece.IsWhite) pst = -pst;
+                eval += pst;
             }
         }
-        else
-        {
-            // Evaluate pieces for black
-            int pieceValue = pieceTables[i % 6];
-                foreach (Piece piece in pieces[i])
-                {
-                    Square square = piece.Square;
-                    if (piece.IsWhite) // White piece
-                        eval += pieceValue + knightPST[square.Rank, square.File];
-                else // Black piece
-                    eval -= pieceValue + knightPST[7 - square.Rank, square.File];
-            }
-        }
-    }
 
 
         if (board.IsWhiteToMove)
         {
-            if (board.IsDraw()) {
+            if (board.IsDraw())
+            {
                 return 0;
             }
-            if (board.IsInCheckmate()) {
+            if (board.IsInCheckmate())
+            {
                 eval -= 999999;
             }
             if (move.IsCapture || move.IsCastles || move.IsPromotion)
@@ -86,20 +70,30 @@ public class MyBot : IChessBot
                 eval -= 50;
             }
             return eval;
-        } else {
+        }
+        else
+        {
             if (board.TrySkipTurn())
             {
                 if (board.IsInCheckmate())
                 {
                     eval += 999999;
                 }
-                if (move.IsCapture || move.IsCastles || move.IsPromotion) {
+                if (move.IsCapture || move.IsCastles || move.IsPromotion)
+                {
                     eval -= 50;
                 }
                 board.UndoSkipTurn();
             }
             return eval;
         }
+    }
+
+    private float getPST(int rank, int file, int i,bool white)
+    {
+        if (!white) rank = 7 - rank;
+        if(i <= 5) return pawnPST[rank, file];
+        else return knightPST[rank, file];
     }
 
     Move GetBestMove(Board board)
@@ -113,27 +107,20 @@ public class MyBot : IChessBot
             board.MakeMove(move); // Make the move on the board
             float score = Minimax(board, move, 3, float.NegativeInfinity, float.PositiveInfinity, false);
             board.UndoMove(move); // Undo the move after evaluation
-            if(board.IsWhiteToMove)
+            float mult = 1f;
+            if (!board.IsWhiteToMove) mult = -1f;
+
+            if (score > (bestScore) * -1)
             {
-                if (score > bestScore)
-                {
                 bestScore = score;
                 bestMove = move;
-                }
             }
-            else
-            {
-                if (score < bestScore)
-                {
-                bestScore = score;
-                bestMove = move;
-                }
-            }
+
         }
 
         return bestMove;
     }
-        float Minimax(Board board, Move move, int depth, float alpha, float beta, bool isMaximizing)
+    float Minimax(Board board, Move move, int depth, float alpha, float beta, bool isMaximizing)
     {
         if (depth == 0)
             return evaluate(board, move);
