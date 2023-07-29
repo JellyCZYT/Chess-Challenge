@@ -108,14 +108,23 @@ public class MyBot : IChessBot
             float score = Minimax(board, move, 3, float.NegativeInfinity, float.PositiveInfinity, false);
             board.UndoMove(move); // Undo the move after evaluation
             float mult = 1f;
-            if (!board.IsWhiteToMove) mult = -1f;
 
-            if (score > (bestScore) * -1)
+            if (board.IsWhiteToMove)
             {
-                bestScore = score;
-                bestMove = move;
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestMove = move;
+                }
             }
-
+            else
+            {
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
         }
 
         return bestMove;
