@@ -107,7 +107,6 @@ public class MyBot : IChessBot
             board.MakeMove(move); // Make the move on the board
             float score = Minimax(board, move, 3, float.NegativeInfinity, float.PositiveInfinity, false);
             board.UndoMove(move); // Undo the move after evaluation
-            float mult = 1f;
 
             if (board.IsWhiteToMove)
             {
