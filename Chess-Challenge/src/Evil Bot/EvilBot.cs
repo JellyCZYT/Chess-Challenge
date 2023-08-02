@@ -7,135 +7,65 @@ namespace ChessChallenge.Example
     // Plays randomly otherwise.
     public class EvilBot : IChessBot
     {
+        //                     .  P    K    B    R    Q    K
+        int[] kPieceValues = { 0, 100, 300, 310, 500, 900, 10000 };
+        int kMassiveNum = 99999999;
+
+        int mDepth;
+        Move mBestMove;
+
         public Move Think(Board board, Timer timer)
         {
-            return GetBestMove(board);
+            Move[] legalMoves = board.GetLegalMoves();
+            mDepth = 3;
+
+            EvaluateBoardNegaMax(board, mDepth, -kMassiveNum, kMassiveNum, board.IsWhiteToMove ? 1 : -1);
+
+            return mBestMove;
         }
 
-        int[] pieceTables = { 0, 100, 300, 400, 500, 1000, 0 };
-
-        float evaluate(Board board, Move move)
+        int EvaluateBoardNegaMax(Board board, int depth, int alpha, int beta, int color)
         {
-            // Evaluate INIT
-            PieceList[] pieces = board.GetAllPieceLists();
-            float eval = 0f;
+            Move[] legalMoves;
 
-            for (int i = 0; i < pieces.Length; i++)
-            {
-                if (i <= 5)
-                {
-                    eval += pieceTables[i % 6] * pieces[i].Count;
-                }
-                else
-                {
-                    eval -= pieceTables[i % 6] * pieces[i].Count;
-                }
-            }
+            if (board.IsDraw())
+                return 0;
 
-            if (board.IsWhiteToMove)
+            if (depth == 0 || (legalMoves = board.GetLegalMoves()).Length == 0)
             {
-                if (board.IsDraw())
-                {
-                    return 0;
-                }
+                // EVALUATE
+                int sum = 0;
+
                 if (board.IsInCheckmate())
-                {
-                    eval -= 999999;
-                }
-                if (move.IsCapture || move.IsCastles || move.IsPromotion)
-                {
-                    eval -= 50;
-                }
-                return eval;
+                    return -9999999;
+
+                for (int i = 0; ++i < 7;)
+                    sum += (board.GetPieceList((PieceType)i, true).Count - board.GetPieceList((PieceType)i, false).Count) * kPieceValues[i];
+                // EVALUATE
+
+                return color * sum;
             }
-            else
+
+            // TREE SEARCH
+            int recordEval = int.MinValue;
+            foreach (Move move in legalMoves)
             {
-                if (board.TrySkipTurn())
+                board.MakeMove(move);
+                int evaluation = -EvaluateBoardNegaMax(board, depth - 1, -beta, -alpha, -color);
+                board.UndoMove(move);
+
+                if (recordEval < evaluation)
                 {
-                    if (board.IsInCheckmate())
-                    {
-                        eval += 999999;
-                    }
-                    if (move.IsCapture || move.IsCastles || move.IsPromotion)
-                    {
-                        eval -= 50;
-                    }
-                    board.UndoSkipTurn();
+                    recordEval = evaluation;
+                    if (depth == mDepth)
+                        mBestMove = move;
                 }
-                return eval;
+                alpha = Math.Max(alpha, recordEval);
+                if (alpha >= beta) break;
             }
-        }
+            // TREE SEARCH
 
-        Move GetBestMove(Board board)
-        {
-            float bestScore = float.NegativeInfinity;
-            Move[] moves = board.GetLegalMoves();
-            Move bestMove = moves[0];
-
-            foreach (Move move in moves)
-            {
-                board.MakeMove(move); // Make the move on the board
-                float score = Minimax(board, move, 3, float.NegativeInfinity, float.PositiveInfinity, false);
-                board.UndoMove(move); // Undo the move after evaluation
-                if (board.IsWhiteToMove)
-                {
-                    if (score > bestScore)
-                    {
-                        bestScore = score;
-                        bestMove = move;
-                    }
-                }
-                else
-                {
-                    if (score < bestScore)
-                    {
-                        bestScore = score;
-                        bestMove = move;
-                    }
-                }
-            }
-
-            return bestMove;
-        }
-        float Minimax(Board board, Move move, int depth, float alpha, float beta, bool isMaximizing)
-        {
-            if (depth == 0)
-                return evaluate(board, move);
-
-            Move[] moves = board.GetLegalMoves();
-
-            if (isMaximizing)
-            {
-                float maxScore = float.NegativeInfinity;
-                foreach (Move childMove in moves)
-                {
-                    board.MakeMove(childMove); // Make the move on the board
-                    float childScore = Minimax(board, childMove, depth - 1, alpha, beta, false);
-                    board.UndoMove(childMove); // Undo the move after evaluation
-
-                    maxScore = Math.Max(maxScore, childScore);
-                    alpha = Math.Max(alpha, childScore);
-                    if (beta <= alpha)
-                        break;
-                }
-                return maxScore;
-            }
-            else
-            {
-                float minScore = float.PositiveInfinity;
-                foreach (Move childMove in moves)
-                {
-                    board.MakeMove(childMove); // Make the move on the board
-                    float childScore = Minimax(board, childMove, depth - 1, alpha, beta, true);
-                    board.UndoMove(childMove); // Undo the move after evaluation
-
-                    minScore = Math.Min(minScore, childScore);
-                    beta = Math.Min(beta, childScore);
-                    if (beta <= alpha)
-                        break;
-                }
-                return minScore;
-            }
+            return recordEval;
         }
     }
 }
