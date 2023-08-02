@@ -11,18 +11,6 @@ public class MyBot : IChessBot
 
     int[] pieceTables = { 0, 100, 300, 400, 500, 1000, 0 };
 
-    int[,] pawnPST = new int[8, 8]
-        {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {50, 50, 50, 50, 50, 50, 50, 50},
-        {10, 10, 20, 30, 30, 20, 10, 10},
-        {5, 5, 10, 25, 25, 10, 5, 5},
-        {0, 0, 0, 20, 20, 0, 0, 0},
-        {5, -5, -10, 0, 0, -10, -5, 5},
-        {5, 10, 10, -20, -20, 10, 10, 5},
-        {0, 0, 0, 0, 0, 0, 0, 0}
-        };
-
     int[,] knightPST = new int[8, 8]
     {
         {-50, -40, -30, -30, -30, -30, -40, -50},
@@ -33,6 +21,16 @@ public class MyBot : IChessBot
         {-30, 5, 10, 15, 15, 10, 5, -30},
         {-40, -20, 0, 5, 5, 0, -20, -40},
         {-50, -40, -30, -30, -30, -30, -40, -50}
+    }, pawnPST = new int[8, 8]
+        {
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {50, 50, 50, 50, 50, 50, 50, 50},
+        {10, 10, 20, 30, 30, 20, 10, 10},
+        {5, 5, 10, 25, 25, 10, 5, 5},
+        {0, 0, 0, 20, 20, 0, 0, 0},
+        {5, -5, -10, 0, 0, -10, -5, 5},
+        {5, 10, 10, -20, -20, 10, 10, 5},
+        {0, 0, 0, 0, 0, 0, 0, 0}
     };
 
     float evaluate(Board board, Move move)
@@ -48,7 +46,7 @@ public class MyBot : IChessBot
             foreach (Piece piece in pieces[i])
             {
                 Square square = piece.Square;
-                float pst = pieceValue + getPST(square.Rank, square.File, i,piece.IsWhite);
+                float pst = pieceValue + getPST(square.Rank, square.File, i, piece.IsWhite);
                 if (!piece.IsWhite) pst = -pst;
                 eval += pst;
             }
@@ -57,42 +55,27 @@ public class MyBot : IChessBot
 
         if (board.IsWhiteToMove)
         {
-            if (board.IsDraw())
-            {
-                return 0;
-            }
-            if (board.IsInCheckmate())
-            {
-                eval -= 999999;
-            }
-            if (move.IsCapture || move.IsCastles || move.IsPromotion)
-            {
-                eval -= 50;
-            }
+            if (board.IsDraw()) return 0;
+            if (board.IsInCheckmate()) eval -= 999999;
+            if (move.IsCapture || move.IsCastles || move.IsPromotion) eval -= 50;
             return eval;
         }
         else
         {
             if (board.TrySkipTurn())
             {
-                if (board.IsInCheckmate())
-                {
-                    eval += 999999;
-                }
-                if (move.IsCapture || move.IsCastles || move.IsPromotion)
-                {
-                    eval -= 50;
-                }
+                if (board.IsInCheckmate()) eval += 999999;
+                if (move.IsCapture || move.IsCastles || move.IsPromotion) eval -= 50;
                 board.UndoSkipTurn();
             }
             return eval;
         }
     }
 
-    private float getPST(int rank, int file, int i,bool white)
+    private float getPST(int rank, int file, int i, bool white)
     {
         if (!white) rank = 7 - rank;
-        if(i <= 5) return pawnPST[rank, file];
+        if (i <= 5) return pawnPST[rank, file];
         else return knightPST[rank, file];
     }
 
