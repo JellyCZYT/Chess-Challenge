@@ -22,9 +22,9 @@ public class MyBot : IChessBot {
                          0 :
                         -NegaMax(-beta, -alpha, depth - 1,
                                  -eval + (move.IsCastles ? 10000 :
-                                          board.SquareIsAttackedByOpponent(move.TargetSquare) ? -1610612 :
                                           move.IsPromotion ? 1610612736 : 
-                                          move.IsCapture ? 1078477616 << (int)move.CapturePieceType * 1306960869 : 0));
+                                          move.IsCapture ? 1078477616 << (int)move.CapturePieceType * 1306960869 : 0)
+                                          - (board.SquareIsAttackedByOpponent(move.TargetSquare) ? 1610612 : 0));
         board.UndoMove(move);
 
         if (subEval < bestFound) {
